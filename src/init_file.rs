@@ -22,9 +22,12 @@ const BITS_PER_SAMPLE: u16 = 16;
 const SUB_CHUNK_2_ID: &str = "data";
 const SUB_CHUNK_2_SIZE: &str = "----";
 
+// These are the like header information in the .wav file, we remember the points where we left "----" (to be filled later)
+// spots and so we go back and write over those bytes. We have subtract 8 from end_pos as that doesn't include the CHUNK_ID
+// (4 bytes) and CHUNK_SIZE (4 bytes). We subtract the end_pos from sub_chunk_size_2_pos to get the size of the written data
+// + the 4bytes that hold the SUB_CHUNK_2_SIZE
 pub fn main() -> Result<()> {
     let mut wav = File::create("sample.wav").unwrap();
-    let dbg_pos_1 = wav.stream_position()?;
     wav.write_all(CHUNK_ID.as_bytes())?;
     let chunk_size_pos = wav.stream_position()?;
     wav.write_all(CHUNK_SIZE.as_bytes())?;
@@ -40,16 +43,17 @@ pub fn main() -> Result<()> {
     wav.write_all(SUB_CHUNK_2_ID.as_bytes())?;
     let sub_chunk_size_2_pos = wav.stream_position()?;
     wav.write_all(SUB_CHUNK_2_SIZE.as_bytes())?;
-    let dbg_pos = wav.stream_position()?;    
     let mut end_pos: u64 = data::write(&mut wav, SAMPLE_RATE, BITS_PER_SAMPLE)?;
     let size = (end_pos - chunk_size_pos) as u32;
     if size % 2 != 0 {
         wav.write_all(&[0x00])?;
         end_pos = wav.stream_position()?;
-    }
+    } // for alignment I guess
+    let size = (end_pos - chunk_size_pos) as u32;
     wav.seek(SeekFrom::Start(sub_chunk_size_2_pos))?;
     wav.write_all(&size.to_le_bytes())?;
     wav.seek(SeekFrom::Start(chunk_size_pos))?;
     wav.write_all(&(end_pos as u32 - 8).to_le_bytes())?;
     wav.sync_all()
+    // to guarantee everything writes before file is closed
 }
