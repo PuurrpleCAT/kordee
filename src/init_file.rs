@@ -47,10 +47,9 @@ pub fn main() -> Result<()> {
         wav.write_all(&[0x00])?;
         end_pos = wav.stream_position()?;
     }
-    let size: u32 = (end_pos - chunk_size_pos) as u32 / 8;
     wav.seek(SeekFrom::Start(sub_chunk_size_2_pos))?;
     wav.write_all(&size.to_le_bytes())?;
     wav.seek(SeekFrom::Start(chunk_size_pos))?;
-    wav.write_all(&(end_pos as u32 / 8 - 8).to_le_bytes())?;
+    wav.write_all(&(end_pos as u32 - 8).to_le_bytes())?;
     wav.sync_all()
 }
