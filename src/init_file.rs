@@ -43,7 +43,7 @@ pub fn main() -> Result<()> {
     wav.write_all(SUB_CHUNK_2_ID.as_bytes())?;
     let sub_chunk_size_2_pos = wav.stream_position()?;
     wav.write_all(SUB_CHUNK_2_SIZE.as_bytes())?;
-    let mut end_pos: u64 = data::write(&mut wav, SAMPLE_RATE, BITS_PER_SAMPLE)?;
+    let mut end_pos: u64 = data::write(&mut wav, SAMPLE_RATE, BITS_PER_SAMPLE);
     let size = (end_pos - chunk_size_pos) as u32;
     if size % 2 != 0 {
         wav.write_all(&[0x00])?;
